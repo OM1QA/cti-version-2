@@ -12,6 +12,18 @@ import hashlib
 import re
 from smetip.ransomware.store import clear_and_save, load_groups
 
+from smetip.scoring.confidence import calculate_confidence_score
+from smetip.utils.dedupe import deduplicate_vulnerabilities, deduplicate_indicators
+
+from smetip.ingesters.base import BaseIngester
+from smetip.ingesters.cisa_kev import CISAKEVIngester
+from smetip.ingesters.otx import OTXIngester
+from smetip.ingesters.abuse_ch import AbuseCHIngester
+# Optional (not yet wired in load_threat_data):
+from smetip.ingesters.nvd import NVDIngester
+from smetip.ingesters.cisa_advisories import CISAAdvisoriesIngester
+
+
 # Page config
 st.set_page_config(
     page_title="SME Threat Intelligence Platform",
@@ -127,17 +139,6 @@ def parse_rss_date(date_string):
     """Parse various RSS date formats with timezone awareness"""
     try:
         import feedparser
-from smetip.scoring.confidence import calculate_confidence_score
-from smetip.utils.dedupe import deduplicate_vulnerabilities, deduplicate_indicators
-
-from smetip.ingesters.base import BaseIngester
-from smetip.ingesters.cisa_kev import CISAKEVIngester
-from smetip.ingesters.otx import OTXIngester
-from smetip.ingesters.abuse_ch import AbuseCHIngester
-# Optional (not yet wired in load_threat_data):
-from smetip.ingesters.nvd import NVDIngester
-from smetip.ingesters.cisa_advisories import CISAAdvisoriesIngester
-
         parsed_date = feedparser._parse_date(date_string)
         if parsed_date:
             dt = datetime(*parsed_date[:6])
@@ -145,12 +146,11 @@ from smetip.ingesters.cisa_advisories import CISAAdvisoriesIngester
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
             return dt
-    except:
+    except Exception:
         pass
-    
+
     # Fallback to current time with UTC timezone
     return datetime.now(timezone.utc)
-
 def extract_full_content(url, source_name):
     """Extract full article content for whitelisted sources"""
     if source_name not in EXTRACT_WHITELIST:
