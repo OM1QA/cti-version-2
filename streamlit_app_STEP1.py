@@ -138,7 +138,6 @@ def stable_id(title, link):
 def parse_rss_date(date_string):
     """Parse various RSS date formats with timezone awareness"""
     try:
-        import feedparser
         parsed_date = feedparser._parse_date(date_string)
         if parsed_date:
             dt = datetime(*parsed_date[:6])
@@ -148,7 +147,9 @@ def parse_rss_date(date_string):
             return dt
     except Exception:
         pass
-
+    
+    # Fallback to current time with UTC timezone
+    return datetime.now(timezone.utc)
     # Fallback to current time with UTC timezone
     return datetime.now(timezone.utc)
 def extract_full_content(url, source_name):
